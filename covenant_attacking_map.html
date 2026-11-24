@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Covenant Attacking Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout idea: one printed sheet. The net seen from behind sits over the court seen from above,
+     sharing one left-to-right axis. The call name shouts; everything around it stays quiet.
+     Black, blue and red are reserved for the map's own color key. */
+  --paper:#E9ECE6;
+  --sheet:#F8F9F5;
+  --court:#EDEFE8;
+  --ink:#14161B;
+  --ink-2:#555B65;
+  --rule:#C3C8BE;
+  --blue:#1E4AD0;
+  --red:#CF2A1E;
+  --purple:#7A3FC2;
+  --green:#1B7F4B;
+  --ball:#F2B90F;
+  --ok:#197A45;
+  --miss:#A85A06;
+  --display:'Big Shoulders Display','Big Shoulders','Barlow Condensed','Arial Narrow',sans-serif;
+  --cond:'Barlow Condensed','Arial Narrow','Helvetica Neue',sans-serif;
+  --body:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 16px/1.45 var(--body)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2.5px solid var(--blue);outline-offset:2px}
+.app{max-width:1080px;margin:0 auto;padding:22px 20px 56px}
+
+/* ---------- header */
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 24px;flex-wrap:wrap;padding-bottom:14px;border-bottom:3px solid var(--ink);margin-bottom:22px}
+.eyebrow{font:600 12px/1.2 var(--cond);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);margin:0 0 6px}
+h1{font:900 clamp(36px,8vw,54px)/.88 var(--display);text-transform:uppercase;margin:0;letter-spacing:.005em}
+.tabs{display:flex;gap:4px}
+.tabs button{font:700 17px/1 var(--cond);text-transform:uppercase;letter-spacing:.07em;padding:10px 14px;color:var(--ink);background:transparent;border:1.5px solid transparent;cursor:pointer}
+.tabs button:hover{border-color:var(--ink)}
+.tabs button[aria-current="page"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+
+/* ---------- board layout */
+.board{display:grid;grid-template-columns:minmax(0,480px) minmax(0,1fr);grid-template-rows:auto 1fr;grid-template-areas:"stage top" "stage bottom";gap:22px 44px;align-items:start}
+.ptop{grid-area:top;min-width:0}
+.pbot{grid-area:bottom;min-width:0}
+.stage-wrap{grid-area:stage;background:var(--sheet);border:1.5px solid var(--ink)}
+@media (max-width:860px){
+  .board{grid-template-columns:minmax(0,1fr);grid-template-rows:auto;grid-template-areas:"top" "stage" "bottom";gap:16px}
+  .stage-wrap{max-width:520px;width:100%;justify-self:center}
+}
+
+/* ---------- now showing */
+.now{display:grid;gap:12px}
+.now-name{font:900 clamp(60px,16vw,104px)/.8 var(--display);text-transform:uppercase;margin:0;letter-spacing:-.005em;overflow-wrap:anywhere}
+.now-name.b{color:var(--blue)} .now-name.r{color:var(--red)} .now-name.p{color:var(--purple)} .now-name.g{color:var(--green)}
+.now-name .alias{font-weight:600;font-size:.46em;color:var(--ink-2);margin-left:.22em;letter-spacing:.01em;white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0;margin:0}
+.tag{display:inline-flex;align-items:center;gap:7px;height:27px;padding:0 9px;border:1.5px solid var(--ink);font:600 13px/1 var(--cond);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+.tag.who.k{background:var(--ink);color:var(--sheet)}
+.tag.who.b{background:var(--blue);border-color:var(--blue);color:#fff}
+.tag.who.r{background:var(--red);border-color:var(--red);color:#fff}
+.tag.who.p{background:var(--purple);border-color:var(--purple);color:#fff}
+.tag.who.g{background:var(--green);border-color:var(--green);color:#fff}
+.tag.plain{border-color:var(--rule);color:var(--ink-2)}
+.bars{display:inline-flex;align-items:flex-end;gap:2px;height:12px}
+.bars i{width:3px;background:var(--rule)}
+.bars i:nth-child(1){height:5px}.bars i:nth-child(2){height:8.5px}.bars i:nth-child(3){height:12px}
+.bars[data-n="1"] i:nth-child(-n+1),.bars[data-n="2"] i:nth-child(-n+2),.bars[data-n="3"] i{background:currentColor}
+.cue{font:500 18px/1.35 var(--body);margin:0;max-width:34ch}
+.seg{display:inline-flex;border:1.5px solid var(--ink)}
+.seg button{border:0;background:transparent;font:700 14px/1 var(--cond);text-transform:uppercase;letter-spacing:.07em;padding:0 12px;height:32px;cursor:pointer}
+.seg button+button{border-left:1.5px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.segrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.seglab{font:600 12px/1 var(--cond);text-transform:uppercase;letter-spacing:.12em;color:var(--ink-2)}
+
+/* ---------- stage */
+#stage{display:block;width:100%;height:auto;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+#stage text{font-family:var(--cond);font-weight:700}
+#stage.c-k{--c:var(--ink)} #stage.c-b{--c:var(--blue)} #stage.c-r{--c:var(--red)}
+#stage.c-p:not(.neutral){--c:var(--purple)} #stage.c-g:not(.neutral){--c:var(--green)}
+#stage.neutral{--c:var(--ink-2)}
+.cap{font-size:8px;font-weight:600!important;letter-spacing:.14em;fill:var(--ink-2)}
+.tier{stroke:var(--rule);stroke-width:1;stroke-dasharray:2 4}
+.tierlab{font-size:8.5px;fill:var(--ink-2);letter-spacing:.05em}
+.floor{stroke:var(--ink);stroke-width:1.5}
+.meshl{fill:none;stroke:var(--ink);stroke-width:.5;opacity:.5}
+.mesh{fill:url(#mesh)}
+.tape{stroke:var(--ink);stroke-width:3}
+.netb{stroke:var(--ink);stroke-width:1}
+.ant{stroke:var(--ink);stroke-width:2;stroke-dasharray:3 2.5}
+.post{stroke:var(--ink-2);stroke-width:3;stroke-linecap:round}
+.sfig rect,.sfig circle{fill:var(--sheet);stroke:var(--ink);stroke-width:1.3}
+.sfig line{stroke:var(--ink);stroke-width:2.4;stroke-linecap:round}
+.opp{fill:var(--court);opacity:.45}
+.court{fill:var(--court)}
+.cl{stroke:var(--ink);stroke-width:1.6}
+.cl.thin{stroke-width:1.2}
+.netl{stroke:var(--ink);stroke-width:4;stroke-linecap:round}
+.postdot{fill:var(--ink-2)}
+.spot{fill:var(--sheet);stroke:var(--ink-2);stroke-width:1}
+.stok circle{fill:var(--sheet);stroke:var(--ink);stroke-width:1.5}
+.stok text{fill:var(--ink);font-size:9px}
+.fade0{stop-color:var(--sheet);stop-opacity:0}.fade1{stop-color:var(--sheet);stop-opacity:1}
+
+.marker{cursor:pointer}
+.marker.k{--k:var(--ink)}.marker.b{--k:var(--blue)}.marker.r{--k:var(--red)}.marker.p{--k:var(--purple)}
+.marker .hitarea{fill:transparent}
+.marker .dot{fill:var(--k)}
+.marker .halo{fill:none;stroke:var(--k);stroke-width:1.5;display:none}
+.marker.sel .halo{display:block}
+.marker .mlab{fill:var(--k);font-size:11.5px;letter-spacing:.03em}
+.br{cursor:pointer}
+.br .hitarea{fill:transparent}
+.br .pill{fill:var(--sheet);stroke:var(--green);stroke-width:1.3}
+.br text{fill:var(--green);font-size:11px;letter-spacing:.04em}
+.br.sel .pill{fill:var(--green);stroke:var(--green)}
+.br.sel text{fill:#fff}
+
+#route{fill:none;stroke:var(--ink-2);stroke-width:1.3;stroke-dasharray:4 4}
+#air{stroke:var(--ink-2);stroke-width:1.4;stroke-dasharray:.5 3.5;stroke-linecap:round}
+#setline{stroke:var(--c);stroke-width:1.4;stroke-dasharray:.5 4.5;stroke-linecap:round}
+.foot ellipse{fill:var(--sheet);stroke:var(--ink-2);stroke-width:1.1}
+.foot.on ellipse{fill:var(--rule)}
+.foot.cue ellipse{fill:var(--c);stroke:var(--c)}
+.footn{font-size:8px;fill:var(--ink-2)}
+.footn.cue{fill:var(--c);font-size:10px}
+#token circle{fill:var(--ink);stroke:var(--sheet);stroke-width:1.5}
+#token text{fill:var(--sheet);font-size:8px;letter-spacing:.02em}
+#bplan,#belev{fill:var(--ball);stroke:var(--ink);stroke-width:1.2}
+#bshadow{fill:var(--ink);opacity:.15}
+#arc{fill:none;stroke:var(--c);stroke-width:1.6;stroke-dasharray:.5 5;stroke-linecap:round}
+#arcSolid{fill:none;stroke:var(--c);stroke-width:2.3}
+.ring{fill:none;stroke:var(--ink);stroke-width:1.6}
+.flash{fill:none;stroke:var(--c);stroke-width:2}
+#efig rect,#efig circle{fill:var(--ink)}
+#earm{stroke:var(--ink);stroke-width:3.2;stroke-linecap:round}
+
+.tgt{display:none;cursor:pointer;outline:none}
+#stage.show-targets .tgt,.tgt.right,.tgt.wrong{display:block}
+#stage.show-targets.front-one .tgt[data-t="F1"],#stage.show-targets.front-one .tgt[data-t="F2"],
+#stage.show-targets:not(.front-one) .tgt[data-t="F"]{display:none}
+.tgt circle{fill:rgba(20,22,27,.05);stroke:var(--ink);stroke-width:1.5;stroke-dasharray:3 3}
+.tgt:hover circle{fill:rgba(20,22,27,.13)}
+.tgt:focus-visible circle{stroke:var(--blue);stroke-width:3;stroke-dasharray:none}
+.tgt path{display:none;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.tgt.right circle{stroke:var(--ok);fill:rgba(25,122,69,.16);stroke-dasharray:none;stroke-width:2.5}
+.tgt.wrong circle{stroke:var(--miss);fill:rgba(168,90,6,.14);stroke-dasharray:none;stroke-width:2.5}
+.tgt.right .tck{display:block;stroke:var(--ok)}
+.tgt.wrong .tx{display:block;stroke:var(--miss)}
+#msg{display:none}
+#stage.show-msg #msg{display:block}
+#msg .m1{font-size:15px;letter-spacing:.14em;fill:var(--ink-2)}
+#msg .m2{font-size:11px;font-weight:600!important;letter-spacing:.06em;fill:var(--ink-2)}
+
+#stage.hide-markers .marker,#stage.hide-br .br{display:none}
+#stage.hide-route #route,#stage.hide-route #air,#stage.hide-route #setline{display:none}
+#stage.hide-feet #feet{display:none}
+#stage.hide-arc #arc,#stage.hide-arc #arcSolid{display:none}
+#stage.hide-actor #token,#stage.hide-actor #efig,#stage.hide-actor #bplan,#stage.hide-actor #bshadow,#stage.hide-actor #belev,
+#stage.hide-actor #sring,#stage.hide-actor #sringE,#stage.hide-actor #flashP,#stage.hide-actor #flashE{display:none}
+
+/* ---------- transport */
+.transport{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;align-items:center;padding:12px 14px 12px;border-top:1.5px solid var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;background:var(--ink);color:var(--sheet);border:1.5px solid var(--ink);font:800 21px/1 var(--display);text-transform:uppercase;letter-spacing:.05em;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#2a2d35}
+.btn:disabled{background:var(--rule);border-color:var(--rule);color:var(--sheet);cursor:default}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:rgba(20,22,27,.07)}
+.btn svg{width:12px;height:12px;fill:currentColor}
+.tl{position:relative;padding:15px 8px 17px}
+.tl-track{position:relative;height:5px;background:var(--rule)}
+.tl-fill{position:absolute;left:0;top:0;bottom:0;width:var(--p,0%);background:var(--ink)}
+.tl-head{position:absolute;top:50%;left:var(--p,0%);width:15px;height:15px;margin:-7.5px 0 0 -7.5px;border-radius:50%;background:var(--ball);border:1.5px solid var(--ink)}
+.tl input{position:absolute;left:-8px;width:calc(100% + 16px);top:-14px;height:33px;margin:0;opacity:0;cursor:pointer}
+.tl input::-webkit-slider-thumb{width:16px;height:16px}
+.tl input::-moz-range-thumb{width:16px;height:16px;border:0}
+.tl:focus-within .tl-head{outline:2.5px solid var(--blue);outline-offset:2px}
+.tl-flags,.tl-steps{position:absolute;left:8px;right:8px;height:13px;pointer-events:none}
+.tl-flags{top:0}.tl-steps{bottom:0}
+.tl-flags span,.tl-steps span{position:absolute;transform:translateX(-50%);font:700 10px/13px var(--cond);letter-spacing:.09em;white-space:nowrap}
+.tl-flags span::after{content:"";position:absolute;left:50%;top:13px;width:1.5px;height:9px;background:var(--ink)}
+.tl-steps span{color:var(--ink-2);font-weight:600}
+.tl-steps span.cue{color:var(--ink);font-weight:700;border-bottom:2px solid var(--ink);line-height:11px}
+.topts{grid-column:1/-1;display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap}
+.check{display:inline-flex;align-items:center;gap:7px;font:600 14px/1 var(--cond);text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+.check input{width:17px;height:17px;margin:0;accent-color:var(--ink)}
+.phase{margin-left:auto;font:600 13px/1 var(--cond);text-transform:uppercase;letter-spacing:.1em;color:var(--ink-2)}
+.stage-wrap.quiz .tl,.stage-wrap.quiz .check,.stage-wrap.quiz .phase{display:none}
+.stage-wrap.quiz .transport{grid-template-columns:auto auto;justify-content:start}
+.stage-wrap.quiz .topts{grid-column:auto}
+
+/* ---------- call list */
+.calls{display:grid;gap:9px}
+.cgroup{display:grid;grid-template-columns:108px minmax(0,1fr);gap:10px;align-items:start}
+.cgroup h3,.legend h3{font:600 12px/1.2 var(--cond);letter-spacing:.13em;text-transform:uppercase;color:var(--ink-2);margin:0}
+.cgroup h3{padding-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px 0 10px;border:1.5px solid var(--ink);background:transparent;font:700 18px/1 var(--cond);text-transform:uppercase;letter-spacing:.03em;cursor:pointer;white-space:nowrap}
+.chip:hover{background:rgba(20,22,27,.07)}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:var(--ink);flex:none}
+.chip.b .dot{background:var(--blue)}.chip.r .dot{background:var(--red)}.chip.p .dot{background:var(--purple)}
+.chip.g .dot,.chip[aria-pressed="true"].g .dot{background:var(--green);border:0}
+.chip .al{font-weight:500;color:var(--ink-2)}
+.chip small{font:600 11px/1 var(--cond);letter-spacing:.06em;color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.chip[aria-pressed="true"] .al,.chip[aria-pressed="true"] small{color:var(--rule)}
+.chip[aria-pressed="true"].k .dot{background:var(--sheet)}
+.legend{margin-top:22px;padding-top:16px;border-top:1.5px solid var(--ink);display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px 28px}
+.legend ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:5px;font-size:15px}
+.key li{display:flex;align-items:center;gap:8px}
+.sw{width:12px;height:12px;border-radius:50%;flex:none;background:var(--ink)}
+.sw.b{background:var(--blue)}.sw.r{background:var(--red)}.sw.p{background:var(--purple)}.sw.g{background:var(--green)}
+.key b{font:700 15px/1 var(--cond);text-transform:uppercase;letter-spacing:.06em;min-width:58px}
+.notes li{padding-left:14px;position:relative}
+.notes li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:1.5px;background:var(--ink)}
+@media (max-width:480px){.cgroup{grid-template-columns:66px minmax(0,1fr);gap:8px}.chip{height:34px;font-size:16px;padding:0 8px 0 7px;gap:5px}.chip small{font-size:10px}.cgroup h3{padding-top:10px}}
+
+/* ---------- quiz */
+.qcard{display:grid;gap:12px}
+.qmeta{display:flex;justify-content:space-between;align-items:center;gap:12px;font:600 12px/1.2 var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.qbar{height:5px;background:var(--rule)}
+.qbar i{display:block;height:100%;background:var(--ink)}
+.qcall{font:900 clamp(54px,14vw,92px)/.82 var(--display);text-transform:uppercase;margin:2px 0 0;overflow-wrap:anywhere}
+.qcall .alias{font-weight:600;font-size:.46em;color:var(--ink-2);margin-left:.22em;white-space:nowrap}
+.qsub{font:500 18px/1.3 var(--body);margin:0}
+.qopts{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(132px,1fr))}
+.opt{min-height:48px;padding:6px 10px;border:1.5px solid var(--ink);background:transparent;font:700 18px/1.05 var(--cond);text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
+.opt:hover:not(:disabled){background:rgba(20,22,27,.07)}
+.opt:disabled{cursor:default;color:var(--ink-2);border-color:var(--rule)}
+.opt.right:disabled{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.wrong:disabled{border-color:var(--miss);color:var(--miss);text-decoration:line-through}
+.qfb{min-height:74px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.qfb p{margin:0;font-size:16px;line-height:1.4;max-width:42ch}
+.qfb b{font:800 21px/1 var(--display);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px}
+.qfb b.ok{color:var(--ok)}.qfb b.no{color:var(--miss)}
+.qtitle{font:900 clamp(40px,9vw,60px)/.88 var(--display);text-transform:uppercase;margin:0}
+.qdesc{margin:0;font-size:17px;min-height:1.45em}
+.qstartrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.best{font:600 13px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.types{flex-wrap:wrap}
+.score{font:900 clamp(84px,20vw,128px)/.8 var(--display);margin:0}
+.score span{font-weight:600;font-size:.4em;color:var(--ink-2);margin-left:.15em}
+.verdict{font:500 18px/1.35 var(--body);margin:0}
+.misslist{list-style:none;margin:0;padding:0;border-top:1.5px solid var(--ink)}
+.misslist li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--rule);align-items:baseline}
+.misslist button{border:0;background:none;padding:0;font:800 24px/1 var(--display);text-transform:uppercase;cursor:pointer;text-align:left;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px}
+.misslist button.b{color:var(--blue)}.misslist button.r{color:var(--red)}.misslist button.p{color:var(--purple)}.misslist button.g{color:var(--green)}
+.misslist span{font-size:15px}
+.qfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px;color:var(--ink-2)}
+.link{border:0;background:none;padding:6px 0;font:600 14px/1 var(--cond);text-transform:uppercase;letter-spacing:.1em;text-decoration:underline;text-underline-offset:3px;cursor:pointer;color:var(--ink)}
+
+/* ---------- cheat sheet */
+.sheet{display:grid;grid-template-columns:minmax(0,1fr);gap:34px}
+.sheet>article{min-width:0}
+.sheet h2{font:900 clamp(28px,5.6vw,38px)/.95 var(--display);text-transform:uppercase;margin:0 0 14px;text-wrap:balance;max-width:22ch}
+.tempos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
+.tempos li{background:var(--sheet);border:1.5px solid var(--ink);padding:14px 14px 15px;display:grid;gap:10px;align-content:start}
+.tempos .th{display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;font:700 18px/1 var(--cond);text-transform:uppercase;letter-spacing:.05em;min-height:36px;align-content:flex-start}
+.tempos .th small{flex-basis:100%;font:600 12px/1 var(--cond);letter-spacing:.1em;color:var(--ink-2)}
+table.even{table-layout:fixed}
+table.even th,table.even td{width:20%}
+.tempos p{margin:0;font-size:16px;line-height:1.35}
+.minifeet{display:flex;align-items:flex-end;gap:9px;height:38px}
+.minifeet i{display:grid;place-items:center;width:17px;height:28px;border-radius:50%;border:1.5px solid var(--ink-2);font:700 11px/1 var(--cond);font-style:normal;color:var(--ink-2)}
+.minifeet i:nth-child(even){margin-bottom:9px}
+.minifeet i.cue{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.minifeet em{font:600 11px/1.15 var(--cond);font-style:normal;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin-left:6px;align-self:center}
+.tablewrap{overflow-x:auto;background:var(--sheet);border:1.5px solid var(--ink)}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{padding:11px 12px;text-align:left;vertical-align:middle;border-bottom:1px solid var(--rule)}
+tr:last-child th,tr:last-child td{border-bottom:0}
+thead th{font:600 12px/1.2 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);border-bottom:1.5px solid var(--ink)}
+tbody th{font:700 14px/1.1 var(--cond);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;width:1%}
+td{font:800 25px/1 var(--display);text-transform:uppercase;letter-spacing:.01em}
+td .al{font-weight:600;font-size:.62em;color:var(--ink-2)}
+td .b,.sheet .b{color:var(--blue)} td .r,.sheet .r{color:var(--red)} td .p{color:var(--purple)} td .g{color:var(--green)}
+td .sep{display:inline-block;width:.5em}
+td.setter{font:600 11px/1.1 var(--cond);letter-spacing:.14em;color:var(--ink-2);text-align:center;border-left:1px dashed var(--ink-2);border-right:1px dashed var(--ink-2);width:1%;white-space:nowrap}
+td.none{color:var(--rule)}
+.sheetkey{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px 26px;font-size:16px}
+.sheetkey li{display:flex;align-items:center;gap:8px}
+.sheetkey b{font:700 16px/1 var(--cond);text-transform:uppercase;letter-spacing:.06em}
+.fine{font-size:15px;color:var(--ink-2);margin:10px 0 0;max-width:65ch}
+
+/* ---------- setter signals */
+.sig{display:flex;gap:14px;align-items:center;border:1.5px solid var(--ink);background:var(--sheet);padding:8px 12px;max-width:380px}
+.sig p{margin:4px 0 0;font-size:16px;line-height:1.3}
+.sigfig{width:132px;flex:none}
+.sigfig svg,.sigfig img,.qsig svg,.qsig img,.sigcard svg,.sigcard img{display:block;width:100%;height:auto}
+.qsig{width:min(250px,72%);border:1.5px solid var(--ink);background:var(--sheet);padding:6px 10px}
+.qsig img{max-width:190px;margin:0 auto}
+.sigs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.sigcard{background:var(--sheet);border:1.5px solid var(--ink);padding:10px 12px 12px;display:grid;gap:6px;align-content:start}
+.sigcard b{font:800 24px/1 var(--display);text-transform:uppercase}
+.sigcard b.b{color:var(--blue)}.sigcard b.r{color:var(--red)}.sigcard b.p{color:var(--purple)}.sigcard b.g{color:var(--green)}
+.sigcard span{font-size:14px;line-height:1.3;color:var(--ink-2)}
+.sigcard img{max-width:120px;margin:0 auto}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Covenant Christian · Boys Varsity</p>
+      <h1>Attacking Map</h1>
+    </div>
+    <nav class="tabs" aria-label="Views">
+      <button type="button" data-view="map" aria-current="page">Map</button>
+      <button type="button" data-view="quiz">Quiz</button>
+      <button type="button" data-view="sheet">Cheat sheet</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="board" class="board" aria-label="Playbook board">
+      <div class="ptop">
+        <div id="nowPanel" class="now"></div>
+        <div id="quizPanel" class="qcard" hidden></div>
+      </div>
+
+      <div class="stage-wrap" id="stageWrap">
+        <svg id="stage" role="group" aria-label="Diagram of the net from behind and the court from above, showing the selected set call"></svg>
+        <div class="transport">
+          <button type="button" class="btn" id="runBtn"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg><span>Run it</span></button>
+          <div class="tl" id="tl">
+            <div class="tl-flags" id="tlFlags" aria-hidden="true"></div>
+            <div class="tl-track"><i class="tl-fill"></i><i class="tl-head"></i>
+              <input type="range" id="scrub" min="0" max="1000" step="1" value="0" aria-label="Scrub through the play">
+            </div>
+            <div class="tl-steps" id="tlSteps" aria-hidden="true"></div>
+          </div>
+          <div class="topts">
+            <div class="seg" role="group" aria-label="Playback speed">
+              <button type="button" data-speed="1" id="sp1">Full speed</button>
+              <button type="button" data-speed="0.4" id="sp2">Slow-mo</button>
+            </div>
+            <label class="check" for="holdChk"><input type="checkbox" id="holdChk"> Freeze at the setter's touch</label>
+            <span class="phase" id="phase"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pbot">
+        <div id="callsPanel"></div>
+        <div id="quizFoot" class="qfoot" hidden></div>
+      </div>
+    </section>
+
+    <section id="sheet" class="sheet" hidden aria-label="Cheat sheet"></section>
+  </main>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const lerp = (a, b, u) => a + (b - a) * u;
+const rnd = n => Math.floor(Math.random() * n);
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = s => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+const f1 = n => (+n).toFixed(1);
+
+/* ================= the map ================= */
+const TEMPO_NAME = { 1: 'First', 2: 'Second', 3: 'Third' };
+const TEMPO_ORD = { 1: '1st', 2: '2nd', 3: '3rd' };
+const KEY = {
+  oh:   { cls: 'k', label: 'Outside only', color: 'Black' },
+  rs:   { cls: 'k', label: 'Right side only', color: 'Black' },
+  pins: { cls: 'k', label: 'Pins only', color: 'Black' },
+  om:   { cls: 'b', label: 'Outside or middle', color: 'Blue' },
+  m:    { cls: 'r', label: 'Middle only', color: 'Red' },
+  mr:   { cls: 'p', label: 'Middle or right side', color: 'Purple' },
+  back: { cls: 'g', label: 'Back row', color: 'Green' }
+};
+const ZONE = {
+  L:  { name: 'Left pin', at: 'the left pin', x: 0.6 },
+  Z3: { name: 'Zone 3', at: 'zone 3, between the left pin and the middle', x: 3.0 },
+  F:  { name: 'Front of setter', at: 'the front of the setter', x: 5.3 },
+  B:  { name: 'Behind setter', at: 'behind the setter', x: 7.3 },
+  R:  { name: 'Right pin', at: 'the right pin', x: 8.5 },
+  BR: { name: 'Back row', at: 'the back row' }
+};
+const ZONE_ORDER = ['L', 'Z3', 'F', 'B', 'R', 'BR'];
+// tk = timing kind: q first tempo, 2 second, 3 third
+const CALLS = [
+  { id: '4',     name: '4',      zone: 'L',  tempo: 3, tk: '3', who: 'oh', x: 0.6 },
+  { id: 'go',    name: 'Go',     zone: 'L',  tempo: 2, tk: '2', who: 'oh', x: 0.6 },
+  { id: 'shoot', name: 'Shoot',  zone: 'L',  tempo: 1, tk: 'q', who: 'oh', x: 0.6 },
+  { id: '3',     name: '3',      zone: 'Z3', tempo: 3, tk: '3', who: 'pins', x: 3.0 },
+  { id: 'rip',   name: 'Rip',  alias: '32',    zone: 'Z3', tempo: 2, tk: '2', who: 'om', x: 3.0 },
+  { id: 'gap',   name: 'Gap',  alias: '31',    zone: 'Z3', tempo: 1, tk: 'q', who: 'om', x: 3.0 },
+  { id: '2',     name: '2',      zone: 'F',  tempo: 2, tk: '2', who: 'om',   x: 5.3 },
+  { id: 'push',  name: 'Push',   zone: 'F',  tempo: 1, tk: 'q', who: 'm',    x: 4.8, spot: 'F2', at: 'in front of the setter, farther off than the 1' },
+  { id: 'quick', name: '1', alias: 'Quick', zone: 'F',  tempo: 1, tk: 'q', who: 'm',    x: 5.75, spot: 'F1', at: 'tight in front of the setter' },
+  { id: 'back1', name: 'Back 1', zone: 'B',  tempo: 1, tk: 'q', who: 'mr', x: 6.9 },
+  { id: 'wave',  name: 'Slide', alias: 'Wave', zone: 'B',  tempo: 2, tk: '2', who: 'm', x: 7.7 },
+  { id: '5',     name: '5',      zone: 'R',  tempo: 3, tk: '3', who: 'rs', x: 8.5 },
+  { id: 'jet',   name: 'Jet',    zone: 'R',  tempo: 2, tk: '2', who: 'rs', x: 8.5 },
+  { id: 'wide',  name: 'Wide',   zone: 'R',  tempo: 1, tk: 'q', who: 'rs', x: 8.5 },
+  { id: 'a',   name: 'A', zone: 'BR', who: 'back', x: 0.9, lane: 'far left lane', n: 1 },
+  { id: 'b',   name: 'B', zone: 'BR', who: 'back', x: 2.7, lane: 'second lane from the left', n: 2 },
+  { id: 'bic', name: 'Bic', alias: 'Pipe', zone: 'BR', who: 'back', x: 4.5, lane: 'middle back', n: 3 },
+  { id: 'c',   name: 'C', zone: 'BR', who: 'back', x: 6.3, lane: 'second lane from the right', n: 4 },
+  { id: 'd',   name: 'D', zone: 'BR', who: 'back', x: 8.1, lane: 'far right lane', n: 5 }
+];
+const byId = Object.fromEntries(CALLS.map(c => [c.id, c]));
+const FRONT = CALLS.filter(c => c.zone !== 'BR');
+const BACK = CALLS.filter(c => c.zone === 'BR');
+const full = c => c.name + (c.alias ? ' / ' + c.alias : '');
+const CUE_TXT = {
+  q: 'Last two steps of your approach when the setter touches.',
+  2: 'Second step of your approach when the setter touches.',
+  3: 'High ball. First step of your approach when the setter touches.',
+  back: 'Back-row attack. Take off behind the 3-meter line.',
+  bic: 'Back-row second tempo. Second step of your approach when the setter touches.',
+  pipe: 'Same lane as the Bic, set higher. First step of your approach when the setter touches.'
+};
+
+/* ================= setter signals ================= */
+const PIPE_IMG = 'data:image/jpeg;base64,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';
+const SIG = {
+  '4': ['IMRP', 90, 'Four fingers'], go: ['TIM', 90, 'Thumb, index and middle'], shoot: ['TI', 90, 'Thumb and index'],
+  '3': ['IMR', 90, 'Three fingers'], rip: [['MRP', 'IM'], 90, 'Bottom three, then two'], gap: [['MRP', 'I'], 90, 'Bottom three, then one'],
+  '2': ['IM', 90, 'Two fingers'], push: ['', 90, 'Closed fist'], quick: ['I', 90, 'One finger'],
+  back1: ['P', 90, 'Pinky only'], wave: ['TP', 90, 'Thumb and pinky'],
+  '5': ['TIMRP', 90, 'Open hand'], jet: ['IP', 90, 'Index and pinky'], wide: ['TIP', 90, 'Thumb, index and pinky'],
+  a: ['I', 180, 'One finger down'], b: ['IM', 180, 'Two fingers down'], c: ['IMR', 180, 'Three fingers down'], d: ['IMRP', 180, 'Four fingers down'],
+  bic: ['T', 90, 'Thumb flicks, like sparking a lighter'], pipe: [null, 0, 'Hand on edge at the chest, fingers up']
+};
+const sigKey = (id, vi) => id === 'bic' && vi === 1 ? 'pipe' : id;
+function handSVG(f, cx, rot) {
+  const FX = { I: -17, M: -6, R: 5, P: 16 }, FL = { I: 36, M: 42, R: 38, P: 28 };
+  let s = `<g transform="rotate(${rot} ${cx} 52)"><rect x="${cx - 23}" y="56" width="46" height="34" rx="10" fill="none" stroke="currentColor" stroke-width="1.6"/>`;
+  for (const k of 'IMRP') { const x = cx + FX[k], on = f.includes(k); s += `<line x1="${x}" y1="56" x2="${x}" y2="${on ? 56 - FL[k] : 48}" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity="${on ? 1 : 0.22}"/>`; }
+  const t = f.includes('T');
+  return s + `<line x1="${cx - 22}" y1="76" x2="${t ? cx - 44 : cx - 27}" y2="${t ? 58 : 70}" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity="${t ? 1 : 0.22}"/></g>`;
+}
+function sigFig(key) {
+  const [f, rot, desc] = SIG[key];
+  if (key === 'pipe') return `<img src="${PIPE_IMG}" alt="${desc}">`;
+  const body = Array.isArray(f)
+    ? handSVG(f[0], 42, rot) + '<path d="M85 52h12m-5-5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/>' + handSVG(f[1], 142, rot)
+    : handSVG(f, 92, rot) + (key === 'bic' ? '<path d="M100 4q7 3 7 11M106 1q9 4 9 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".6"/>' : '');
+  return `<svg viewBox="0 0 184 104" role="img" aria-label="${desc}">${body}</svg>`;
+}
+
+/* ================= geometry ================= */
+const W = 400, S = 39, OX = 24.5, EV = 22, FLOOR = 182, NET_Y = 224, DEPTH = 7.3;
+const H = Math.round(NET_Y + DEPTH * S + 4);
+const X = m => OX + m * S, HY = h => FLOOR - h * EV, PY = d => NET_Y + d * S;
+const SETTER = { x: 6.3, d: 0.55, h: 2.35 };
+const TIER = { 1: 3.55, 2: 4.95, 3: 7.0 };
+
+/* ================= timing (seconds, takeoff = 0) ================= */
+const TS = [-1.05, -0.70, -0.32, -0.10];   // when each of the four steps plants
+const FR = [0.15, 0.42, 0.80, 1];           // how far along the approach each step lands
+const TSTART = -1.40, THIT = 0.28, TLAND = 0.62, TEND = 1.0, JUMP = 0.78;
+const TSET = { q: -0.21, 2: -0.70, 3: -1.05 };
+const APEX = { q: 3.45, 2: 4.95, 3: 7.0 };
+const CUE_STEPS = { q: [2, 3], 2: [1], 3: [0] };
+
+function routesFor(c) {
+  const x = c.x;
+  const OH = sx => ({ role: 'OH', label: 'Outside', s: [sx, 4.5], k: [x - 0.15, 1.1], h: [x, 0.6] });
+  const MB = sx => ({ role: 'MB', label: 'Middle', s: [sx, 3.6], k: [x + (sx > x ? 0.12 : -0.12), 1.1], h: [x, 0.6] });
+  switch (c.id) {
+    case '4': case 'go': case 'shoot': return [OH(-0.3)];
+    case '3': return [OH(0.0)];
+    case 'rip': case 'gap': return [OH(0.0), MB(4.6)];
+    case '2': return [OH(2.7), MB(4.7)];
+    case 'push': return [MB(4.5)];
+    case 'quick': return [MB(4.95)];
+    case 'back1': return [MB(5.4), { role: 'RS', label: 'Right side', s: [8.9, 4.3], k: [7.05, 1.1], h: [x, 0.6] }];
+    case 'wave': return [{ role: 'MB', label: 'Middle', s: [5.0, 3.5], c: [5.55, 1.2], k: [7.15, 1.2], h: [7.7, 0.7] }];
+    case '5': case 'jet': case 'wide': return [{ role: 'RS', label: 'Right pin', s: [9.3, 4.5], k: [x + 0.15, 1.1], h: [x, 0.6] }];
+    default: return [{ role: 'BR', label: 'Back row', s: [x, 5.9], k: [x, 3.35], h: [x, 2.3], back: true }];
+  }
+}
+
+function makePlay(c, ri, vi) {
+  const rs = routesFor(c), r = rs[ri] || rs[0];
+  let tk = c.tk || '2', apex = null;
+  if (c.id === 'bic') { if (vi === 1) { tk = '3'; apex = 6.0; } else { tk = '2'; } }
+  if (apex == null) apex = APEX[tk];
+  const tSet = TSET[tk], t0 = Math.min(TSTART, tSet - 1.0) - 0.25, t1 = TEND;
+  const hitH = r.back ? 3.05 : 3.15;
+  const ctrl = r.c || [(r.s[0] + r.k[0]) / 2, (r.s[1] + r.k[1]) / 2];
+  const bez = u => { const a = 1 - u; return [a * a * r.s[0] + 2 * a * u * ctrl[0] + u * u * r.k[0], a * a * r.s[1] + 2 * a * u * ctrl[1] + u * u * r.k[1]]; };
+  const tan = u => { const a = 1 - u; return [2 * a * (ctrl[0] - r.s[0]) + 2 * u * (r.k[0] - ctrl[0]), 2 * a * (ctrl[1] - r.s[1]) + 2 * u * (r.k[1] - ctrl[1])]; };
+  const land = [r.h[0] + (r.h[0] - r.k[0]) * 0.4, Math.max(r.back ? 1.7 : 0.42, r.h[1] + (r.h[1] - r.k[1]) * 0.4)];
+  const steps = FR.map((u, i) => {
+    const p = bez(u), t = tan(u), len = Math.hypot(t[0], t[1]) || 1;
+    const tx = t[0] / len, ty = t[1] / len, side = i % 2 === 0 ? 1 : -1;   // right, left, right, left
+    return { x: p[0] + (-ty) * 0.13 * side, d: p[1] + tx * 0.13 * side, ang: Math.atan2(tx, -ty) * 180 / Math.PI, nx: -ty * side, ny: tx * side };
+  });
+  const kt = [TSTART, ...TS], kf = [0, ...FR];
+  const frac = t => {
+    if (t <= TSTART) return 0;
+    if (t >= TS[3]) return 1;
+    for (let i = 0; i < 4; i++) if (t < kt[i + 1]) {
+      const u = (t - kt[i]) / (kt[i + 1] - kt[i]), e = u * u * (3 - 2 * u);
+      return kf[i] + (kf[i + 1] - kf[i]) * (0.45 * u + 0.55 * e);
+    }
+    return 1;
+  };
+  const hitter = t => {
+    if (t < 0) { const p = bez(frac(t)); return { x: p[0], d: p[1], j: 0, arm: 0 }; }
+    const j = t < TLAND ? JUMP * 4 * (t / TLAND) * (1 - t / TLAND) : 0;
+    if (t < THIT) { const u = t / THIT; return { x: lerp(r.k[0], r.h[0], u), d: lerp(r.k[1], r.h[1], u), j, arm: u }; }
+    if (t < TLAND) { const u = (t - THIT) / (TLAND - THIT); return { x: lerp(r.h[0], land[0], u), d: lerp(r.h[1], land[1], u), j, arm: 1 - u }; }
+    return { x: land[0], d: land[1], j: 0, arm: 0 };
+  };
+  const B = apex - (SETTER.h + hitH) / 2;
+  const setH = u => SETTER.h + (hitH - SETTER.h) * u + 4 * B * u * (1 - u);
+  const spikeDx = r.h[0] < 4.5 ? 1.3 : -1.3;
+  const ball = t => {
+    const tp = tSet - 1.0;
+    if (t < tp) return null;
+    if (t < tSet) { const u = t - tp; return { x: lerp(3.4, SETTER.x, u), d: lerp(7.9, SETTER.d, u), h: 0.8 + (SETTER.h - 0.8) * u + 11.6 * u * (1 - u), o: 1 }; }
+    if (t <= THIT) { const u = (t - tSet) / (THIT - tSet); return { x: lerp(SETTER.x, r.h[0], u), d: lerp(SETTER.d, r.h[1], u), h: setH(u), o: 1 }; }
+    const u = (t - THIT) / 0.32; if (u > 1) return null;
+    return { x: r.h[0] + spikeDx * u, d: r.h[1] - (r.h[1] + 2.2) * u, h: hitH * (1 - u), o: 1 - u };
+  };
+  let arc = '';
+  for (let i = 0; i <= 40; i++) { const u = i / 40; arc += (i ? 'L' : 'M') + f1(X(lerp(SETTER.x, r.h[0], u))) + ' ' + f1(HY(setH(u))); }
+  return { c, r, tk, tSet, t0, t1, hitH, ctrl, land, steps, cue: CUE_STEPS[tk], hitter, ball, arc };
+}
+
+/* ================= stage ================= */
+const svg = $('#stage');
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+function buildStage() {
+  const x0 = X(0), x9 = X(9), sx = X(SETTER.x);
+  let s = `<defs>
+    <pattern id="mesh" width="5" height="5" patternUnits="userSpaceOnUse"><path class="meshl" d="M0 .25H5M.25 0V5"/></pattern>
+    <clipPath id="clipPlan"><rect x="0" y="${NET_Y - 28}" width="${W}" height="${H - NET_Y + 28}"/></clipPath>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="fade0"/><stop offset="1" class="fade1"/></linearGradient>
+  </defs>`;
+  // net from behind
+  s += `<text class="cap" x="258" y="10" text-anchor="middle">FROM BEHIND THE COURT</text>`;
+  for (const n of [1, 2, 3]) {
+    const y = HY(TIER[n]);
+    s += `<line class="tier" x1="24" x2="${W - 22}" y1="${f1(y)}" y2="${f1(y)}"/><text class="tierlab" x="2" y="${f1(y + 3)}">${TEMPO_ORD[n].toUpperCase()}</text>`;
+  }
+  for (const px of [X(-0.33), X(9.33)]) s += `<line class="post" x1="${f1(px)}" x2="${f1(px)}" y1="${FLOOR - 2}" y2="${f1(HY(2.55))}"/>`;
+  s += `<rect class="mesh" x="${f1(x0)}" y="${f1(HY(2.43))}" width="${f1(9 * S)}" height="${EV}"/>
+    <line class="netb" x1="${f1(x0)}" x2="${f1(x9)}" y1="${f1(HY(1.43))}" y2="${f1(HY(1.43))}"/>
+    <line class="tape" x1="${f1(x0)}" x2="${f1(x9)}" y1="${f1(HY(2.43))}" y2="${f1(HY(2.43))}"/>
+    <line class="ant" x1="${f1(x0)}" x2="${f1(x0)}" y1="${f1(HY(2.43))}" y2="${f1(HY(3.23))}"/>
+    <line class="ant" x1="${f1(x9)}" x2="${f1(x9)}" y1="${f1(HY(2.43))}" y2="${f1(HY(3.23))}"/>
+    <line class="floor" x1="6" x2="${W - 6}" y1="${FLOOR}" y2="${FLOOR}"/>
+    <g class="sfig" transform="translate(${f1(sx)} ${FLOOR})"><line x1="-3" y1="-30" x2="-4.5" y2="${f1(-SETTER.h * EV + 3)}"/><line x1="3" y1="-30" x2="4.5" y2="${f1(-SETTER.h * EV + 3)}"/><rect x="-4.5" y="-34" width="9" height="33.3" rx="4.5"/><circle cx="0" cy="-38.5" r="4.2"/></g>
+    <text class="cap" x="${f1(sx)}" y="${FLOOR + 10}" text-anchor="middle">SETTER</text>`;
+  // court from above
+  s += `<rect class="opp" x="${f1(x0)}" y="${NET_Y - 28}" width="${f1(9 * S)}" height="28"/>
+    <rect class="court" x="${f1(x0)}" y="${NET_Y}" width="${f1(9 * S)}" height="${f1(H - NET_Y)}"/>
+    <line class="cl" x1="${f1(x0)}" x2="${f1(x0)}" y1="${NET_Y - 28}" y2="${H}"/>
+    <line class="cl" x1="${f1(x9)}" x2="${f1(x9)}" y1="${NET_Y - 28}" y2="${H}"/>
+    <line class="cl thin" x1="${f1(x0)}" x2="${f1(x9)}" y1="${f1(PY(3))}" y2="${f1(PY(3))}"/>
+    <text class="cap" x="${f1(x9 + 3)}" y="${f1(PY(3) + 3)}">3M</text>
+    <text class="cap" x="${f1(x0 + 6)}" y="${NET_Y - 11}">FROM ABOVE</text>
+    <line class="netl" x1="${f1(X(-0.33))}" x2="${f1(X(9.33))}" y1="${NET_Y}" y2="${NET_Y}"/>`;
+  for (const mx of [...new Set(FRONT.map(c => c.x))]) s += `<circle class="spot" cx="${f1(X(mx))}" cy="${f1(PY(0.6))}" r="2.4"/>`;
+  s += `<g class="stok"><circle cx="${f1(sx)}" cy="${f1(PY(SETTER.d))}" r="9"/><text x="${f1(sx)}" y="${f1(PY(SETTER.d) + 3.2)}" text-anchor="middle">S</text></g>
+    <rect x="0" y="${f1(PY(6.95))}" width="${W}" height="${f1(H - PY(6.95))}" fill="url(#fade)"/>`;
+  // staff markers
+  s += `<g id="markers">`;
+  for (const c of FRONT) {
+    const mx = X(c.x), my = HY(TIER[c.tempo]);
+    const [anchor, dx] = { push: ['end', 5], back1: ['start', -5], wave: ['end', 6], jet: ['start', -6] }[c.id] || ['middle', 0];
+    s += `<g class="marker ${KEY[c.who].cls}" data-id="${c.id}"><circle class="hitarea" cx="${f1(mx)}" cy="${f1(my - 5)}" r="15"/><circle class="halo" cx="${f1(mx)}" cy="${f1(my)}" r="7.6"/><circle class="dot" cx="${f1(mx)}" cy="${f1(my)}" r="4.5"/><text class="mlab" x="${f1(mx + dx)}" y="${f1(my - 10.5)}" text-anchor="${anchor}">${esc(c.name.toUpperCase())}</text></g>`;
+  }
+  for (const c of BACK) {
+    const mx = X(c.x), my = PY(6.55), w = c.id === 'bic' ? 66 : 24;
+    s += `<g class="br" data-id="${c.id}"><rect class="hitarea" x="${f1(mx - Math.max(w, 40) / 2)}" y="${f1(my - 19)}" width="${Math.max(w, 40)}" height="38"/><rect class="pill" x="${f1(mx - w / 2)}" y="${f1(my - 10)}" width="${w}" height="20" rx="10"/><text x="${f1(mx)}" y="${f1(my + 4)}" text-anchor="middle">${c.id === 'bic' ? 'BIC / PIPE' : c.name}</text></g>`;
+  }
+  s += `</g>`;
+  // moving parts
+  s += `<g clip-path="url(#clipPlan)">
+      <line id="setline"/><path id="route"/><line id="air"/>
+      <g id="feet">${[0, 1, 2, 3].map(i => `<g class="foot"><ellipse rx="3.2" ry="5.4"/></g><text class="footn" text-anchor="middle">${i + 1}</text>`).join('')}</g>
+      <circle id="sring" class="ring" cx="${f1(sx)}" cy="${f1(PY(SETTER.d))}" r="10"/>
+      <circle id="flashP" class="flash"/>
+      <circle id="bshadow" r="4.4"/>
+      <g id="token"><circle r="9.5"/><text y="3" text-anchor="middle"></text></g>
+      <circle id="bplan" r="4.4"/>
+    </g>
+    <path id="arc"/><path id="arcSolid" pathLength="1"/>
+    <circle id="sringE" class="ring" cx="${f1(sx)}" cy="${f1(HY(SETTER.h))}" r="7"/>
+    <g id="efig"><rect x="-4.5" y="-34" width="9" height="34" rx="4.5"/><circle cx="0" cy="-38.5" r="4.2"/><line id="earm" x1="0" y1="-31" x2="0" y2="-11"/></g>
+    <circle id="flashE" class="flash"/>
+    <circle id="belev" r="4.6"/>`;
+  // quiz targets
+  const tg = (id, mx, d, label, r = 17) => `<g class="tgt" data-t="${id}" tabindex="0" role="button" aria-label="${label}"><circle cx="${f1(X(mx))}" cy="${f1(PY(d))}" r="${r}"/><g transform="translate(${f1(X(mx))} ${f1(PY(d))})"><path class="tck" d="M-6 .5l4 4.5 8-9.5"/><path class="tx" d="M-5-5l10 10M5-5l-10 10"/></g></g>`;
+  s += `<g id="targets">`;
+  for (const z of ['L', 'Z3', 'B', 'R']) s += tg(z, ZONE[z].x, 0.8, ZONE[z].name);
+  s += tg('F', ZONE.F.x, 0.8, ZONE.F.name) + tg('F2', 4.65, 0.8, 'In front of the setter, farther off', 14) + tg('F1', 5.55, 0.8, 'Tight in front of the setter', 14);
+  for (const c of BACK) s += tg(c.id, c.x, 4.6, `Back row, lane ${c.n} of 5 from the left`);
+  s += `</g>
+    <g id="msg"><text class="m1" x="${W / 2}" y="${f1(PY(3.95))}" text-anchor="middle">ANSWER FIRST</text><text class="m2" x="${W / 2}" y="${f1(PY(3.95) + 16)}" text-anchor="middle">THEN WATCH IT RUN</text></g>`;
+  svg.innerHTML = s;
+}
+buildStage();
+const el = id => document.getElementById(id);
+const dom = {
+  setline: el('setline'), route: el('route'), air: el('air'), feet: $$('.foot', svg), footn: $$('.footn', svg),
+  sring: el('sring'), sringE: el('sringE'), flashP: el('flashP'), flashE: el('flashE'), bshadow: el('bshadow'),
+  token: el('token'), tokenTxt: $('#token text'), bplan: el('bplan'), belev: el('belev'), arc: el('arc'), arcSolid: el('arcSolid'),
+  efig: el('efig'), earm: el('earm'), tl: el('tl'), scrub: el('scrub'), flags: el('tlFlags'), steps: el('tlSteps'),
+  phase: el('phase'), runBtn: el('runBtn'), wrap: el('stageWrap')
+};
+
+/* ================= state ================= */
+const state = { view: 'map', call: 'go', ri: 0, vi: 0, speed: store.get('ccam-speed', 1), hold: store.get('ccam-hold', true) };
+if (state.speed !== 1 && state.speed !== 0.4) state.speed = 1;
+const flags = new Set();
+let play = null, T = 0, playing = false, raf = 0, lastNow = 0, holdLeft = 0, held = false, restTimer = 0;
+let round = null;
+let qType = store.get('ccam-qtype', 'mix');
+
+function applyStageClass() {
+  svg.setAttribute('class', [...flags, 'c-' + KEY[byId[state.call].who].cls].join(' '));
+}
+function setPlay() {
+  const c = byId[state.call];
+  play = makePlay(c, state.ri, state.vi);
+  const p = play, r = p.r;
+  applyStageClass();
+  dom.route.setAttribute('d', `M${f1(X(r.s[0]))} ${f1(PY(r.s[1]))}Q${f1(X(p.ctrl[0]))} ${f1(PY(p.ctrl[1]))} ${f1(X(r.k[0]))} ${f1(PY(r.k[1]))}`);
+  const setA = (n, o) => { for (const k in o) n.setAttribute(k, o[k]); };
+  setA(dom.air, { x1: f1(X(r.k[0])), y1: f1(PY(r.k[1])), x2: f1(X(p.land[0])), y2: f1(PY(p.land[1])) });
+  setA(dom.setline, { x1: f1(X(SETTER.x)), y1: f1(PY(SETTER.d)), x2: f1(X(r.h[0])), y2: f1(PY(r.h[1])) });
+  p.steps.forEach((st, i) => {
+    const cue = p.cue.includes(i);
+    dom.feet[i].setAttribute('transform', `translate(${f1(X(st.x))} ${f1(PY(st.d))}) rotate(${f1(st.ang)})`);
+    dom.feet[i].classList.toggle('cue', cue);
+    setA(dom.footn[i], { x: f1(X(st.x) + st.nx * 10.5), y: f1(PY(st.d) + st.ny * 10.5 + 3) });
+    dom.footn[i].classList.toggle('cue', cue);
+  });
+  dom.tokenTxt.textContent = r.role;
+  dom.arc.setAttribute('d', p.arc); dom.arcSolid.setAttribute('d', p.arc);
+  setA(dom.flashP, { cx: f1(X(r.h[0])), cy: f1(PY(r.h[1])) });
+  setA(dom.flashE, { cx: f1(X(r.h[0])), cy: f1(HY(p.hitH)) });
+  $$('.marker,.br', svg).forEach(n => n.classList.toggle('sel', n.dataset.id === c.id));
+  // timeline
+  const pct = t => ((t - p.t0) / (p.t1 - p.t0) * 100).toFixed(2) + '%';
+  dom.flags.innerHTML = `<span style="left:${pct(p.tSet)}">SET</span><span style="left:${pct(THIT)}">HIT</span>`;
+  dom.steps.innerHTML = TS.map((t, i) => `<span class="${p.cue.includes(i) ? 'cue' : ''}" style="left:${pct(t)}">${i + 1}</span>`).join('');
+  stop();
+  T = p.tSet;
+  render();
+}
+
+function render() {
+  const p = play, t = T, r = p.r;
+  const hp = p.hitter(t);
+  dom.token.setAttribute('transform', `translate(${f1(X(hp.x))} ${f1(PY(hp.d))}) scale(${(1 + hp.j * 0.24).toFixed(3)})`);
+  dom.efig.setAttribute('transform', `translate(${f1(X(hp.x))} ${f1(HY(hp.j))})`);
+  const a = Math.PI * (1 - hp.arm), dir = r.h[0] < SETTER.x ? 1 : -1;
+  dom.earm.setAttribute('x2', f1(Math.sin(a) * 20 * dir));
+  dom.earm.setAttribute('y2', f1(-31 - Math.cos(a) * 20));
+  const b = p.ball(t);
+  if (b) {
+    const bx = X(b.x), by = PY(b.d);
+    dom.bplan.style.display = dom.bshadow.style.display = dom.belev.style.display = '';
+    dom.bplan.setAttribute('cx', f1(bx)); dom.bplan.setAttribute('cy', f1(by)); dom.bplan.setAttribute('r', (4.2 * (1 + 0.09 * b.h)).toFixed(2));
+    dom.bshadow.setAttribute('cx', f1(bx + b.h * 1.5)); dom.bshadow.setAttribute('cy', f1(by + b.h * 1.5));
+    dom.belev.setAttribute('cx', f1(bx)); dom.belev.setAttribute('cy', f1(HY(b.h)));
+    dom.bplan.style.opacity = dom.belev.style.opacity = b.o.toFixed(2);
+  } else {
+    dom.bplan.style.display = dom.bshadow.style.display = dom.belev.style.display = 'none';
+  }
+  const u = t < p.tSet ? 0 : t >= THIT ? 1 : (t - p.tSet) / (THIT - p.tSet);
+  dom.arcSolid.style.strokeDasharray = u.toFixed(3) + ' 1';
+  for (let i = 0; i < 4; i++) dom.feet[i].classList.toggle('on', t >= TS[i] - 1e-6);
+  const ds = Math.abs(t - p.tSet);
+  if (ds < 0.16) {
+    const k = ds / 0.16;
+    dom.sring.style.display = dom.sringE.style.display = '';
+    dom.sring.setAttribute('r', f1(11 + k * 11)); dom.sringE.setAttribute('r', f1(7 + k * 9));
+    dom.sring.style.opacity = dom.sringE.style.opacity = (1 - k).toFixed(2);
+  } else dom.sring.style.display = dom.sringE.style.display = 'none';
+  const dh = t - THIT;
+  if (dh >= 0 && dh < 0.2) {
+    const k = dh / 0.2;
+    dom.flashP.style.display = dom.flashE.style.display = '';
+    dom.flashP.setAttribute('r', f1(5 + k * 13)); dom.flashE.setAttribute('r', f1(5 + k * 13));
+    dom.flashP.style.opacity = dom.flashE.style.opacity = (1 - k).toFixed(2);
+  } else dom.flashP.style.display = dom.flashE.style.display = 'none';
+  const pc = (t - p.t0) / (p.t1 - p.t0);
+  dom.tl.style.setProperty('--p', (pc * 100).toFixed(2) + '%');
+  dom.scrub.value = Math.round(pc * 1000);
+  dom.phase.textContent = ds < 0.012 ? "Setter's touch" : t < p.tSet ? (p.ball(t) ? 'Pass' : 'Ready') : t <= THIT ? 'Set' : t < TLAND ? 'Swing' : 'Down';
+}
+
+function stop() { playing = false; cancelAnimationFrame(raf); clearTimeout(restTimer); }
+function inQuestion() { return state.view === 'quiz' && round && !round.done; }
+function run() {
+  stop();
+  T = play.t0; held = false; holdLeft = 0; playing = true; lastNow = performance.now();
+  render();
+  raf = requestAnimationFrame(tick);
+}
+function tick(now) {
+  if (!playing) return;
+  const real = Math.min(0.05, (now - lastNow) / 1000); lastNow = now;
+  if (holdLeft > 0) holdLeft -= real;
+  else {
+    const prev = T; T += real * state.speed;
+    if ((state.hold || inQuestion()) && !held && prev < play.tSet && T >= play.tSet) { T = play.tSet; held = true; holdLeft = 0.85; }
+    if (T >= play.t1) {
+      T = play.t1; render(); playing = false;
+      restTimer = setTimeout(() => { if (!playing) { T = play.tSet; render(); } }, 900);
+      return;
+    }
+  }
+  render();
+  raf = requestAnimationFrame(tick);
+}
+
+/* ================= map panels ================= */
+const bars = n => `<span class="bars" data-n="${n}" aria-hidden="true"><i></i><i></i><i></i></span>`;
+function renderNow() {
+  const c = byId[state.call], k = KEY[c.who], rs = routesFor(c);
+  const v = c.id === 'bic' ? (state.vi === 1 ? 'pipe' : 'bic') : null;
+  const tempo = v === 'bic' ? 2 : v === 'pipe' ? 3 : c.tempo;
+  const cue = c.zone === 'BR' ? (v ? CUE_TXT[v] : CUE_TXT.back) : CUE_TXT[c.tk];
+  const where = c.zone === 'BR' ? c.lane[0].toUpperCase() + c.lane.slice(1) : ZONE[c.zone].name;
+  let h = `<p class="now-name ${k.cls}">${esc(c.name)}${c.alias ? `<span class="alias">/ ${esc(c.alias)}</span>` : ''}</p>
+    <ul class="tags">
+      ${tempo ? `<li class="tag">${bars(tempo)}${TEMPO_NAME[tempo]} tempo</li>` : ''}
+      <li class="tag who ${k.cls}">${c.whoLabel || k.label}</li>
+      <li class="tag plain">${esc(where)}</li>
+    </ul>
+    <p class="cue">${cue}</p>
+    <div class="sig"><div class="sigfig">${sigFig(sigKey(c.id, state.vi))}</div><div><span class="seglab">Setter signal</span><p>${SIG[sigKey(c.id, state.vi)][2]}</p></div></div>`;
+  if (rs.length > 1) h += `<div class="segrow"><span class="seglab">Run it as</span><div class="seg" role="group" aria-label="Who runs it">${rs.map((r, i) => `<button type="button" data-ri="${i}" aria-pressed="${i === state.ri}">${r.label}</button>`).join('')}</div></div>`;
+  if (c.id === 'bic') h += `<div class="segrow"><span class="seglab">Show</span><div class="seg" role="group" aria-label="Bic or Pipe">${['Bic', 'Pipe'].map((n, i) => `<button type="button" data-vi="${i}" aria-pressed="${i === state.vi}">${n}</button>`).join('')}</div></div>`;
+  el('nowPanel').innerHTML = h;
+}
+function renderCalls() {
+  const chip = c => `<button type="button" class="chip ${KEY[c.who].cls}" data-id="${c.id}" aria-pressed="${c.id === state.call}"><i class="dot"></i>${esc(c.name)}${c.alias ? `<span class="al">/ ${esc(c.alias)}</span>` : ''}${c.tempo ? `<small>${TEMPO_ORD[c.tempo].toUpperCase()}</small>` : ''}</button>`;
+  el('callsPanel').innerHTML = `<div class="calls">${ZONE_ORDER.map(z => `<div class="cgroup"><h3>${ZONE[z].name}</h3><div class="chips">${CALLS.filter(c => c.zone === z).map(chip).join('')}</div></div>`).join('')}</div>
+    <div class="legend">
+      <div><h3>Color key</h3><ul class="key"><li><i class="sw"></i><b>Black</b>Pin hitters: outside on the left, right side on the right</li><li><i class="sw b"></i><b>Blue</b>Outside or middle</li><li><i class="sw r"></i><b>Red</b>Middle only</li><li><i class="sw p"></i><b>Purple</b>Middle or right side</li><li><i class="sw g"></i><b>Green</b>Back row</li></ul></div>
+      <div><h3>Reading the board</h3><ul class="notes"><li>Top view: the higher the dot, the higher the set peaks.</li><li>Filled footprints: where your feet are when the setter touches.</li><li>Drag the timeline to walk through a play.</li></ul></div>
+    </div>`;
+}
+function syncChips() { $$('.chip').forEach(n => n.setAttribute('aria-pressed', String(n.dataset.id === state.call))); }
+function selectCall(id, o = {}) {
+  if (!byId[id]) return;
+  if (state.call !== id) { state.ri = 0; state.vi = 0; }
+  state.call = id;
+  if (o.ri != null) state.ri = o.ri;
+  if (o.vi != null) state.vi = o.vi;
+  setPlay(); renderNow(); syncChips();
+  if (o.play && !reduceMotion) run();
+}
+
+/* ================= quiz ================= */
+const QTYPES = [
+  ['mix', 'Mix', 'A bit of everything.'],
+  ['where', 'Where', 'See the call, tap the spot on the court.'],
+  ['tempo', 'Tempo', 'First, second or third.'],
+  ['who', 'Who', 'Which hitters can run each call.'],
+  ['feet', 'Feet', 'Where your feet are when the setter touches.'],
+  ['read', 'Read it', 'Watch a play run with no labels and name the call.'],
+  ['signal', 'Signals', 'See the setter signal, name the call.']
+];
+const QLABEL = Object.fromEntries(QTYPES.map(t => [t[0], t[1]]));
+const POOL = {
+  where: CALLS.map(c => c.id), read: CALLS.map(c => c.id), signal: CALLS.map(c => c.id),
+  tempo: FRONT.map(c => c.id), who: FRONT.map(c => c.id),
+  feet: FRONT.map(c => c.id)
+};
+const OPTS = {
+  tempo: [[1, 'First'], [2, 'Second'], [3, 'Third']],
+  who: [['oh', 'Outside only'], ['rs', 'Right side only'], ['pins', 'Pins only'], ['om', 'Outside or middle'], ['m', 'Middle only'], ['mr', 'Middle or right side']],
+  feet: [['3', 'First step'], ['2', 'Second step'], ['q', 'Last two steps']]
+};
+const answerOf = q => { const c = byId[q.id]; return q.type === 'where' ? (c.zone === 'BR' ? c.id : c.spot || c.zone) : q.type === 'tempo' ? c.tempo : q.type === 'who' ? c.who : q.type === 'feet' ? c.tk : c.id; };
+function distract(c) {
+  const zi = ZONE_ORDER.indexOf(c.zone), twin = { push: 'quick', quick: 'push' }[c.id];
+  return CALLS.filter(o => o.id !== c.id && o.id !== twin)
+    .map(o => ({ id: o.id, s: (o.zone === c.zone ? 2 : 0) + (o.tk && o.tk === c.tk ? 1 : 0) + (Math.abs(ZONE_ORDER.indexOf(o.zone) - zi) === 1 && c.zone !== 'BR' && o.zone !== 'BR' ? 1 : 0) + Math.random() * 1.6 }))
+    .sort((a, b) => b.s - a.s).slice(0, 3).map(o => o.id);
+}
+function mkQ(type, c) {
+  const q = { type, id: c.id, ri: 0, vi: 0 };
+  if (type === 'read' || type === 'signal') { q.ri = type === 'read' ? rnd(routesFor(c).length) : 0; if (c.id === 'bic') q.vi = rnd(2); q.opts = shuffle([c.id, ...distract(c)]); }
+  return q;
+}
+function buildQs(type) {
+  const types = type === 'mix' ? shuffle(['where', 'where', 'tempo', 'tempo', 'who', 'who', 'feet', 'read', 'read', 'signal']) : Array(10).fill(type);
+  const used = new Set();
+  return types.map(ty => {
+    const pool = shuffle(POOL[ty]);
+    const id = pool.find(i => !used.has(i)) || pool[0];
+    used.add(id);
+    return mkQ(ty, byId[id]);
+  });
+}
+function explain(q) {
+  const c = byId[q.id], n = full(c), back = c.zone === 'BR';
+  const at = back ? `the back row, ${c.lane}` : c.at || ZONE[c.zone].at;
+  switch (q.type) {
+    case 'where': return `${n} gets hit at ${at}.`;
+    case 'tempo': return `${n} is ${TEMPO_NAME[c.tempo].toLowerCase()} tempo. ${CUE_TXT[c.tk]}`;
+    case 'who': return `${n} is ${KEY[c.who].color.toLowerCase()} on the map: ${KEY[c.who].label.toLowerCase()}.`;
+    case 'feet': return `${n} is ${TEMPO_NAME[c.tempo].toLowerCase()} tempo. ${CUE_TXT[c.tk]}`;
+    default: return `That was ${n}${c.tempo ? ', ' + TEMPO_NAME[c.tempo].toLowerCase() + ' tempo' : ''} at ${at}.`;
+  }
+}
+function clearTargets() { $$('.tgt', svg).forEach(n => n.classList.remove('right', 'wrong')); }
+function startRound(type, drill) {
+  const qs = drill ? shuffle(drill).map(m => mkQ(m.type, byId[m.id])) : buildQs(type);
+  round = { type: drill ? 'drill' : type, qs, i: 0, score: 0, streak: 0, answered: false, pick: null, ok: false, misses: [], done: false };
+  showQuestion();
+}
+function showQuestion() {
+  const q = round.qs[round.i];
+  round.answered = false; round.pick = null;
+  clearTargets(); flags.clear();
+  ['neutral', 'hide-markers', 'hide-br', 'hide-route', 'hide-feet', 'hide-arc'].forEach(x => flags.add(x));
+  if (q.type === 'where') { flags.add('hide-actor'); flags.add('show-targets'); if (q.id === '2') flags.add('front-one'); }
+  else if (q.type !== 'read') { flags.add('hide-actor'); flags.add('show-msg'); }
+  state.call = q.id; state.ri = q.ri; state.vi = q.vi;
+  setPlay();
+  renderQuiz();
+  if (q.type === 'read' && !reduceMotion) setTimeout(() => { if (inQuestion() && !round.answered && round.qs[round.i] === q) run(); }, 450);
+}
+function answer(val) {
+  if (!inQuestion() || round.answered) return;
+  const q = round.qs[round.i], ans = answerOf(q);
+  const okSet = [String(ans)];
+  round.answered = true; round.pick = val; round.ok = okSet.includes(String(val));
+  if (round.ok) { round.score++; round.streak++; } else { round.streak = 0; round.misses.push({ type: q.type, id: q.id }); }
+  flags.clear(); setPlay();
+  if (q.type === 'where') {
+    $$('.tgt', svg).forEach(n => { if (round.ok ? n.dataset.t === String(val) : okSet.includes(n.dataset.t)) n.classList.add('right'); else if (n.dataset.t === String(val)) n.classList.add('wrong'); });
+  }
+  renderQuiz();
+  const nb = $('#quizPanel [data-act="next"]'); if (nb) nb.focus({ preventScroll: true });
+  if (!reduceMotion) run();
+}
+function nextQuestion() {
+  if (!round || !round.answered) return;
+  round.i++;
+  if (round.i >= round.qs.length) {
+    round.done = true;
+    if (round.type !== 'drill') { const best = store.get('ccam-best', {}); if (!(best[round.type] >= round.score)) { best[round.type] = round.score; store.set('ccam-best', best); } }
+    clearTargets(); flags.clear(); setPlay(); renderQuiz();
+  } else showQuestion();
+}
+function renderQuiz() {
+  const P = el('quizPanel'), F = el('quizFoot');
+  const active = round && !round.done;
+  dom.wrap.classList.toggle('quiz', !!active);
+  dom.runBtn.querySelector('span').textContent = active ? 'Replay' : 'Run it';
+  F.hidden = !active;
+  if (!round) {
+    const best = store.get('ccam-best', {}), d = QTYPES.find(t => t[0] === qType) || QTYPES[0];
+    P.innerHTML = `<p class="eyebrow">Quiz</p>
+      <h2 class="qtitle">Ten reps.<br>Know your calls cold.</h2>
+      <div class="seg types" role="group" aria-label="What to drill">${QTYPES.map(t => `<button type="button" data-qtype="${t[0]}" aria-pressed="${t[0] === d[0]}">${t[1]}</button>`).join('')}</div>
+      <p class="qdesc">${d[2]}</p>
+      <div class="qstartrow"><button type="button" class="btn" data-act="start">Start</button>${best[d[0]] != null ? `<span class="best">Your best: ${best[d[0]]} / 10</span>` : ''}</div>`;
+    dom.runBtn.disabled = false;
+    return;
+  }
+  if (round.done) {
+    const n = round.qs.length, s = round.score;
+    const verdict = s === n ? 'Clean sheet. You know the map.' : s >= n * 0.8 ? 'Close. Clean up the misses below.' : s >= n * 0.5 ? 'Not there yet. Drill the misses, then run it back.' : 'Back to the map, then try again.';
+    P.innerHTML = `<p class="eyebrow">${round.type === 'drill' ? 'Drill done' : 'Round done · ' + QLABEL[round.type]}</p>
+      <p class="score">${s}<span>/ ${n}</span></p>
+      <p class="verdict">${verdict}</p>
+      ${round.misses.length ? `<ul class="misslist">${round.misses.map(m => { const c = byId[m.id]; return `<li><button type="button" class="${KEY[c.who].cls}" data-show="${c.id}" title="Show it on the board">${esc(full(c))}</button><span>${esc(explain(m))}</span></li>`; }).join('')}</ul>` : ''}
+      <div class="qstartrow">${round.misses.length ? `<button type="button" class="btn" data-act="drill">Drill my misses</button>` : ''}<button type="button" class="btn ${round.misses.length ? 'ghost' : ''}" data-act="again">New round</button><button type="button" class="link" data-act="menu">Change drill</button></div>`;
+    dom.runBtn.disabled = false;
+    return;
+  }
+  const q = round.qs[round.i], c = byId[q.id], done = round.answered;
+  dom.runBtn.disabled = !done && q.type !== 'read';
+  const SUB = { where: 'Tap where it gets hit.', tempo: 'What tempo is it?', who: 'Who can run it?', feet: 'Where are your feet when the setter touches?', read: 'Watch the hitter and the ball.', signal: 'Which call is the setter showing?' };
+  let h = `<div class="qmeta"><span>Question ${round.i + 1} of ${round.qs.length} · ${QLABEL[q.type]}</span><span>${round.streak > 1 ? 'Streak ' + round.streak : 'Score ' + round.score}</span></div>
+    <div class="qbar" aria-hidden="true"><i style="width:${((round.i + (done ? 1 : 0)) / round.qs.length * 100).toFixed(0)}%"></i></div>
+    ${q.type === 'signal' ? `<div class="qsig">${sigFig(sigKey(q.id, q.vi))}</div>` : ''}
+    ${q.type === 'signal' && !done ? '' : `<h2 class="qcall">${q.type === 'read' && !done ? 'Which call?' : esc(c.name) + (c.alias ? `<span class="alias">/ ${esc(c.alias)}</span>` : '')}</h2>`}
+    <p class="qsub">${SUB[q.type]}</p>`;
+  if (q.type !== 'where') {
+    const opts = q.opts ? q.opts.map(id => [id, full(byId[id])]) : OPTS[q.type];
+    const ans = String(answerOf(q));
+    h += `<div class="qopts">${opts.map(([v, l]) => `<button type="button" class="opt${done && String(v) === ans ? ' right' : done && String(v) === String(round.pick) ? ' wrong' : ''}" data-val="${v}"${done ? ' disabled' : ''}>${esc(l)}</button>`).join('')}</div>`;
+  }
+  h += `<div class="qfb" aria-live="polite">${done ? `<p><b class="${round.ok ? 'ok' : 'no'}">${round.ok ? 'Correct' : 'Miss'}</b>${esc(explain(q))}</p><button type="button" class="btn" data-act="next">${round.i + 1 >= round.qs.length ? 'Results' : 'Next'}</button>` : ''}</div>`;
+  P.innerHTML = h;
+  F.innerHTML = `<span>${round.type === 'drill' ? 'Drilling your misses' : QLABEL[round.type] + ' round'}</span><button type="button" class="link" data-act="quit">End round</button>`;
+}
+
+/* ================= cheat sheet ================= */
+function renderSheet() {
+  const nm = c => `<span class="${KEY[c.who].cls}">${esc(c.name)}${c.alias ? `<span class="al"> / ${esc(c.alias)}</span>` : ''}</span>`;
+  const cell = (z, t) => { const cs = FRONT.filter(c => c.zone === z && c.tempo === t); return cs.length ? `<td>${cs.map(nm).join('<span class="sep"></span>')}</td>` : `<td class="none">–</td>`; };
+  const feet = (cue, note) => `<div class="minifeet">${[0, 1, 2, 3].map(i => `<i class="${cue.includes(i) ? 'cue' : ''}">${i + 1}</i>`).join('')}${note ? `<em>${note}</em>` : ''}</div>`;
+  const setterCell = t => t === 3 ? `<td class="setter" rowspan="3">SETTER</td>` : '';
+  el('sheet').innerHTML = `
+    <article>
+      <h2>Tempo is where your feet are when the setter touches</h2>
+      <ul class="tempos">
+        <li><div class="th">${bars(1)}First tempo</div>${feet([2, 3])}<p>On the last two steps of your approach.</p></li>
+        <li><div class="th">${bars(2)}Second tempo</div>${feet([1])}<p>On the second step of your approach.</p></li>
+        <li><div class="th">${bars(3)}Third tempo</div>${feet([0], 'High ball')}<p>On the first step of your approach.</p></li>
+      </ul>
+    </article>
+    <article>
+      <h2>Front row, left to right along the net</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th scope="col">Tempo</th><th scope="col">Left pin</th><th scope="col">Zone 3</th><th scope="col">Front of setter</th><th scope="col"><span hidden>Setter</span></th><th scope="col">Behind setter</th><th scope="col">Right pin</th></tr></thead>
+        <tbody>${[3, 2, 1].map(t => `<tr><th scope="row">${TEMPO_NAME[t]}</th>${cell('L', t)}${cell('Z3', t)}${cell('F', t)}${setterCell(t)}${cell('B', t)}${cell('R', t)}</tr>`).join('')}</tbody>
+      </table></div>
+      <ul class="sheetkey" style="margin-top:14px"><li><i class="sw"></i><b>Black</b>Pin hitters: outside on the left, right side on the right</li><li><i class="sw b"></i><b>Blue</b>Outside or middle</li><li><i class="sw r"></i><b>Red</b>Middle only</li><li><i class="sw p"></i><b>Purple</b>Middle or right side</li><li><i class="sw g"></i><b>Green</b>Back row</li></ul>
+    </article>
+    <article>
+      <h2>Back row, left to right</h2>
+      <div class="tablewrap"><table class="even">
+        <thead><tr>${BACK.map(c => `<th scope="col">${c.lane}</th>`).join('')}</tr></thead>
+        <tbody><tr>${BACK.map(c => `<td><span class="g">${esc(c.name)}</span>${c.alias ? `<span class="al"> / ${esc(c.alias)}</span>` : ''}</td>`).join('')}</tr></tbody>
+      </table></div>
+      <p class="fine">Bic and Pipe share the middle-back lane. Bic is second tempo, Pipe is third.</p>
+    </article>
+    <article>
+      <h2>Setter signals</h2>
+      <p class="fine" style="margin:0 0 12px">Front-row signals are shown with the hand sideways. Lanes A to D point the fingers down.</p>
+      <div class="sigs">${CALLS.flatMap(c => c.id === 'bic' ? [[c, 'bic', 'Bic'], [c, 'pipe', 'Pipe']] : [[c, c.id, full(c)]]).map(([c, k, n]) => `<div class="sigcard"><b class="${KEY[c.who].cls}">${esc(n)}</b>${sigFig(k)}<span>${SIG[k][2]}</span></div>`).join('')}</div>
+    </article>`;
+}
+
+/* ================= views ================= */
+function setView(v) {
+  if (!['map', 'quiz', 'sheet'].includes(v)) v = 'map';
+  state.view = v;
+  $$('.tabs button').forEach(btn => {
+    if (btn.dataset.view === v) btn.setAttribute('aria-current', 'page');
+    else btn.removeAttribute('aria-current');
+  });
+  el('board').hidden = v === 'sheet';
+  el('sheet').hidden = v !== 'sheet';
+  el('nowPanel').hidden = el('callsPanel').hidden = v !== 'map';
+  el('quizPanel').hidden = v !== 'quiz';
+  stop();
+  if (v === 'map') {
+    clearTargets(); flags.clear();
+    dom.wrap.classList.remove('quiz'); dom.runBtn.disabled = false; dom.runBtn.querySelector('span').textContent = 'Run it';
+    el('quizFoot').hidden = true;
+    setPlay(); renderNow(); syncChips();
+  } else if (v === 'quiz') {
+    if (round && !round.done) { if (round.answered) { flags.clear(); setPlay(); renderQuiz(); } else showQuestion(); }
+    else { flags.clear(); setPlay(); renderQuiz(); }
+  }
+}
+
+/* ================= events ================= */
+$$('.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => setView(btn.dataset.view));
+});
+svg.addEventListener('click', e => {
+  const t = e.target.closest('.tgt');
+  if (t) { answer(t.dataset.t); return; }
+  const m = e.target.closest('.marker,.br');
+  if (m && !inQuestion()) selectCall(m.dataset.id, { play: true });
+});
+svg.addEventListener('keydown', e => {
+  const t = e.target.closest && e.target.closest('.tgt');
+  if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); answer(t.dataset.t); }
+});
+el('callsPanel').addEventListener('click', e => { const b = e.target.closest('.chip'); if (b) selectCall(b.dataset.id, { play: true }); });
+el('nowPanel').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.ri != null) selectCall(state.call, { ri: +b.dataset.ri, play: true });
+  else if (b.dataset.vi != null) selectCall(state.call, { vi: +b.dataset.vi, play: true });
+});
+el('quizPanel').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.qtype) { qType = b.dataset.qtype; store.set('ccam-qtype', qType); renderQuiz(); const n = $(`#quizPanel [data-qtype="${qType}"]`); if (n) n.focus({ preventScroll: true }); }
+  else if (b.dataset.val != null) answer(b.dataset.val);
+  else if (b.dataset.show) { selectCall(b.dataset.show, { play: true }); }
+  else if (b.dataset.act === 'start' || b.dataset.act === 'again') startRound(round && round.type !== 'drill' && b.dataset.act === 'again' ? round.type : qType);
+  else if (b.dataset.act === 'drill') startRound(null, round.misses);
+  else if (b.dataset.act === 'next') nextQuestion();
+  else if (b.dataset.act === 'menu') { round = null; renderQuiz(); }
+});
+el('quizFoot').addEventListener('click', e => {
+  if (e.target.closest('[data-act="quit"]')) { round = null; stop(); clearTargets(); flags.clear(); setPlay(); renderQuiz(); }
+});
+dom.runBtn.addEventListener('click', () => run());
+dom.scrub.addEventListener('input', () => { stop(); T = lerp(play.t0, play.t1, dom.scrub.value / 1000); render(); });
+function syncOpts() {
+  el('sp1').setAttribute('aria-pressed', String(state.speed === 1));
+  el('sp2').setAttribute('aria-pressed', String(state.speed !== 1));
+  el('holdChk').checked = !!state.hold;
+}
+$$('[data-speed]').forEach(b => b.addEventListener('click', () => { state.speed = +b.dataset.speed; store.set('ccam-speed', state.speed); syncOpts(); }));
+el('holdChk').addEventListener('change', e => { state.hold = e.target.checked; store.set('ccam-hold', state.hold); });
+
+/* ================= boot ================= */
+renderCalls();
+renderSheet();
+syncOpts();
+setView('map');
+})();
+</script>
+</body>
+</html>
